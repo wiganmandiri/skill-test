@@ -22,10 +22,11 @@ export default function TodoPage(props: any) {
 
   const [addTodo, response] = usePostTodosMutation()
 
-  // console.log("response", response)
 
-  const { data: currentData, refetch } = useGetApiListQuery({ start: paginate?.start, limit: paginate?.limit }, { skip: !paginate?.status })
+  const { data: currentData, isLoading } = useGetApiListQuery({ start: paginate?.start, limit: paginate?.limit }, { skip: !paginate?.status })
   const data = !paginate?.status ? props?.dataList : currentData
+
+  console.log("response", isLoading)
 
   let defaultForm = {
     title: '',
@@ -91,8 +92,8 @@ export default function TodoPage(props: any) {
           </main>
         </div>
       </Modal>
-      <div className='flex flex-col w-[1000px] m-auto gap-4 justify-center'>
-        <div className='flex justify-between w-auto'>
+      <div className='flex flex-col w-max-[1000px] m-auto gap-4 justify-center'>
+        <div className='flex justify-between w-full'>
           <button onClick={() => setIsOpen(true)} className='px-4 py-2 bg-slate-300 w-fit my-auto rounded-sm'>Add</button>
           <Pagination
             paginate={paginate}
@@ -101,18 +102,23 @@ export default function TodoPage(props: any) {
           />
         </div>
         <div className='flex flex-wrap justify-center gap-2'>
-          {_.map(data, (index: any, key: number) => (
-            <div key={key} className=' w-60 p-5 min-h-[2rem] gap-4 shadow-lg flex flex-col justify-between'>
-              <div>
-                <p>{index.idUser}</p>
-                <p>{index.title}</p>
+          {isLoading ?
+            _.map([0, 1, 2, 3, 4, 5, 6, 7], (index: any, key: number) => (
+              <div key={key} className=' w-60 h-40 p-5 min-h-[2rem] gap-4 shadow-lg flex flex-col justify-between'></div>
+            ))
+            :
+            _.map(data, (index: any, key: number) => (
+              <div key={key} className=' w-60 p-5 min-h-[2rem] gap-4 shadow-lg flex flex-col justify-between'>
+                <div>
+                  <p>{index.idUser}</p>
+                  <p>{index.title}</p>
+                </div>
+                <div>{index.completed && (
+                  <p className='text-green-700'>Completed</p>
+                )}
+                </div>
               </div>
-              <div>{index.completed && (
-                <p className='text-green-700'>Completed</p>
-              )}
-              </div>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
     </Layout>

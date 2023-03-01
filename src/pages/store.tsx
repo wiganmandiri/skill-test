@@ -1,6 +1,7 @@
 import { configureStore, createSlice } from '@reduxjs/toolkit';
 import { getApi } from './service';
 import { setupListeners } from '@reduxjs/toolkit/query'
+import { useMemo } from "react";
 
 // const initialState: any = {
 //   data: []
@@ -20,18 +21,63 @@ import { setupListeners } from '@reduxjs/toolkit/query'
 // const store = configureStore({
 //   reducer: api.reducer
 // })
-const store = configureStore({
-  reducer: {
-    // Add the generated reducer as a specific top-level slice
-    [getApi.reducerPath]: getApi.reducer,
-  },
-  // Adding the api middleware enables caching, invalidation, polling,
-  // and other useful features of `rtk-query`.
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(getApi.middleware),
-})
+let store: any
+const initialState = {}
 
-// export const wrapper = createWrapper(makeStore);
-setupListeners(store.dispatch)
-// export const { get } = api.actions
-export default store;
+function initStore(preloadedState = initialState) {
+
+  // const store = configureStore({
+  return configureStore({
+    reducer: {
+      [getApi.reducerPath]: getApi.reducer,
+    },
+    preloadedState,
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware().concat(getApi.middleware),
+  })
+}
+
+export const initializeStore = (preloadedState: any): any => {
+  let _store = store ?? initStore(preloadedState);
+
+  // After navigating to a page with an initial Redux state, merge that state
+  // with the current state in the store, and create a new store
+  if (preloadedState && store) {
+    _store = initStore({
+      ...store.getState(),
+      ...preloadedState
+    });
+    // Reset the current store
+    store = undefined
+  }
+
+  // For SSG and SSR always create a new store
+  if (typeof window === "undefined") return _store
+  // Create the store once in the client
+  if (!store) store = _store
+
+  return _store;
+};
+
+export function useStore(initialState: any) {
+  const store = useMemo(() => initializeStore(initialState), [initialState]);
+  return store;
+}
+
+export function removeUndefined(state: any): any {
+  if (typeof state === "undefined") return null
+  if (Array.isArray(state)) return state.map(removeUndefined)
+  if (typeof state === "object" && state !== null) {
+    return Object.entries(state).reduce((acc, [key, value]) => {
+      return {
+        ...acc,
+        [key]: removeUndefined(value)
+      };
+    }, {});
+  }
+
+  return state;
+}
+
+// setupListeners(store.dispatch)
+// export default store;
